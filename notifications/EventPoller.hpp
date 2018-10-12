@@ -41,10 +41,12 @@ struct EventPoller
 		poller.join();
 	}
 
-	void operator () (const key_type& key, const notification_type& notification)
+	operator std::function<void(const key_type&, const notification_type&)> ()
 	{
-		std::scoped_lock lock(mx);
-		current = { key, notification };
+		return [&] (const key_type& key, const notification_type& notification) {
+			std::scoped_lock lock(mx);
+			current = { key, notification };
+		};
 	}
 
 private:
@@ -59,14 +61,14 @@ private:
 		auto last = start;
 		std::unique_lock lock(mx);
 		while (!exiting) {
-			if (call_always || current != last_sent) {
+			if (current && (call_always || current != last_sent)) {
 				/*
 				 * Copy value locally, call callback outside of
 				 * lock
 				 */
 				last_sent = current;
 				lock.unlock();
-				callback(last_sent.first, last_sent.second);
+				callback(last_sent->first, last_sent->second);
 				lock.lock();
 			}
 			/* Sleep outside of lock */

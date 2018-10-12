@@ -18,7 +18,7 @@ struct EventDebouncer
 	EventDebouncer(interval_type threshold, callback_type callback) :
 		callback(callback),
 		threshold(threshold),
-		previous(0)
+		previous()
 	{
 	}
 

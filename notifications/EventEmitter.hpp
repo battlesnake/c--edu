@@ -13,10 +13,9 @@ struct EventEmitter
 	using notification_type = Notification;
 	using callback_type = std::function<void(const key_type&, const notification_type&)>;
 
-	template <typename Observer>
-	void subscribe(const Key& key, Observer observer)
+	void subscribe(const Key& key, callback_type observer)
 	{
-		observers.emplace(key, observer);
+		observers.emplace(key, std::move(observer));
 	}
 
 	/*
@@ -29,11 +28,9 @@ struct EventEmitter
 
 	void notify(const key_type& key, const notification_type& notification)
 	{
-		auto it = observers.find(key);
-		if (it == observers.end()) {
-			return;
-		}
-		for (const auto& callback : it->second) {
+		auto range = observers.equal_range(key);
+		for (auto& it = range.first; it != range.second; ++it) {
+			auto& callback = it->second;
 			callback(key, notification);
 		}
 	}

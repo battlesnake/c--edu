@@ -16,7 +16,7 @@ struct EventMultiPoller
 {
 	using key_type = Key;
 	using notification_type = Notification;
-	using callback_type = std::function<void(const std::unordered_map<key_type&, notification_type&>&)>;
+	using callback_type = std::function<void(const std::unordered_map<key_type, notification_type>&)>;
 
 	using clock_type = std::chrono::steady_clock;
 	using time_point_type = clock_type::time_point;
@@ -42,7 +42,14 @@ struct EventMultiPoller
 		poller.join();
 	}
 
-	void operator () (const key_type& key, const notification_type& notification)
+	operator std::function<void(const key_type&, const notification_type&)> ()
+	{
+		return [&] (const key_type& key, const notification_type& notification) {
+			notify(key, notification);
+		};
+	}
+
+	void notify(const key_type& key, const notification_type& notification)
 	{
 		std::scoped_lock lock(mx);
 		current[key] = notification;
